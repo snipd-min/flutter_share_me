@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_share_me/flutter_share_me.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 ///sharing platform
 enum Share {
@@ -122,7 +124,11 @@ class _MyAppState extends State<MyApp> {
         response = await flutterShareMe.shareToMessenger(url: url, msg: msg);
         break;
       case Share.twitter:
-        response = await flutterShareMe.shareToTwitter(url: url, msg: msg);
+        response = await flutterShareMe.shareToTwitter(
+          url: url,
+          msg: msg,
+          filePath: file?.path ?? '',
+        );
         break;
       case Share.whatsapp:
         if (file != null) {
