@@ -103,11 +103,15 @@ class FlutterShareMe {
   }
 
   ///share to facebook
-  Future<String?> shareToFacebook(
-      {required String msg, String url = ''}) async {
+  Future<String?> shareToFacebook({
+    required String msg,
+    String url = '',
+    String filePath = '',
+  }) async {
     final Map<String, dynamic> arguments = <String, dynamic>{};
     arguments.putIfAbsent('msg', () => msg);
     arguments.putIfAbsent('url', () => url);
+    arguments.putIfAbsent('filePath', () => filePath);
     String? result;
     try {
       result = await _channel.invokeMethod<String?>(_methodFaceBook, arguments);

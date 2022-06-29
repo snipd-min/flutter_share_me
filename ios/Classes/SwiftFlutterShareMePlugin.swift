@@ -1,4 +1,5 @@
 import Flutter
+import Foundation
 import UIKit
 import FBSDKShareKit
 import PhotosUI
@@ -64,7 +65,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
             
         }else if(call.method.elementsEqual(_methodTwitter)){
             let args = call.arguments as? Dictionary<String,Any>
-            shareTwitter(message: args!["msg"] as! String, url: args!["url"] as! String, result: result)
+            shareTwitter(message: args!["msg"] as! String, url: args!["url"] as! String, filePath: args!["filePath"] as! String, result: result)
         }
         else if(call.method.elementsEqual(_methodInstagram)){
             let args = call.arguments as? Dictionary<String,Any>
@@ -187,22 +188,65 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
     
     func sharefacebook(message:Dictionary<String,Any>, result: @escaping FlutterResult)  {
         let viewController = UIApplication.shared.delegate?.window??.rootViewController
-        //let shareDialog = ShareDialog()
-        let shareContent = ShareLinkContent()
-        shareContent.contentURL = URL.init(string: message["url"] as! String)!
-        shareContent.quote = message["msg"] as? String
-        
-        let shareDialog = ShareDialog(viewController: viewController, content: shareContent, delegate: self)
-        shareDialog.mode = .automatic
-        shareDialog.show()
-        result("Sucess")
-        
+        let filePath = message["filePath"] as! String
+
+        if filePath.isEmpty 
+        {
+          let shareContent = ShareLinkContent()
+          shareContent.contentURL = URL.init(string: message["url"] as! String)!
+          shareContent.quote = message["msg"] as? String
+          
+          let shareDialog = ShareDialog(viewController: viewController, content: shareContent, delegate: self)
+          shareDialog.mode = .automatic
+          shareDialog.show()
+          result("Success")
+        }
+        else {
+          var assetId:String?
+          let video = URL(fileURLWithPath: filePath)
+          do{
+            try PHPhotoLibrary.shared().performChanges({
+                let request = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: video)
+                if(request==nil){
+                  self.result!("An error occured while saving the file.")
+                  return;
+                }
+                assetId = request!.placeholderForCreatedAsset?.localIdentifier
+            }, completionHandler: { success, error in 
+
+                DispatchQueue.main.async {
+                  guard error == nil else {
+                      // handle error
+                      print(error)
+                      return
+                  }
+                  guard let assetId = assetId else {
+                      // highly unlikely that it'll be nil,
+                      // but you should handle this error just in case
+                      return
+                  }
+
+                  let video = ShareVideo()
+                  video.videoURL = URL(string: "assets-library://asset/asset.mp4?id=" + assetId.components(separatedBy:"/")[0] + "&ext=mp4")
+                  let shareContent = ShareVideoContent()
+                  shareContent.video = video
+                  
+                  let shareDialog = ShareDialog(viewController: viewController, content: shareContent, delegate: self)
+                  shareDialog.mode = .automatic
+                  shareDialog.show()
+                  result("Success")
+              }
+            })
+          } catch {
+            print("Fail")
+          }
+        }
     }
-    
+
     // share twitter params
     // @ message
     // @ url
-    func shareTwitter(message:String,url:String, result: @escaping FlutterResult)  {
+    func shareTwitter(message:String,url:String,filePath:String, result: @escaping FlutterResult)  {
         let urlstring = url
         let twitterUrl =  "twitter://post?message=\(message)"
         
@@ -324,7 +368,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
     }
     
     public func sharer(_ sharer: Sharing, didFailWithError error: Error) {
-        print("Share: Fail")
+        print("Share: Fail" + "\(error)")
         
     }
     

@@ -16,6 +16,8 @@ import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.share.Sharer;
 import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.model.ShareVideo;
+import com.facebook.share.model.ShareVideoContent;
 import com.facebook.share.widget.MessageDialog;
 import com.facebook.share.widget.ShareDialog;
 import com.twitter.sdk.android.tweetcomposer.TweetComposer;
@@ -95,7 +97,8 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
       case _methodFaceBook:
         url = call.argument("url");
         msg = call.argument("msg");
-        shareToFacebook(url, msg, result);
+        filePath = call.argument("filePath");
+        shareToFacebook(url, msg, filePath, result);
         break;
       case _methodMessenger:
         url = call.argument("url");
@@ -197,36 +200,53 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
    * @param msg    String
    * @param result Result
    */
-  private void shareToFacebook(String url, String msg, Result result) {
+  private void shareToFacebook(String url, String msg, String filePath, final Result result) {
 
     ShareDialog shareDialog = new ShareDialog(activity);
     // this part is optional
     shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
       @Override
-      public void onSuccess(Sharer.Result result) {
+      public void onSuccess(Sharer.Result r) {
         System.out.println("--------------------success");
+        result.success("success");
       }
 
       @Override
       public void onCancel() {
         System.out.println("-----------------onCancel");
+        result.success("cancelled");
       }
 
       @Override
-      public void onError(FacebookException error) {
+      public void onError(FacebookException e) {
         System.out.println("---------------onError");
+        result.success("error: " + e.toString());
       }
     });
 
-    ShareLinkContent content = new ShareLinkContent.Builder()
-        .setContentUrl(Uri.parse(url))
-        .setQuote(msg)
-        .build();
-    if (ShareDialog.canShow(ShareLinkContent.class)) {
-      shareDialog.show(content);
-      result.success("success");
-    }
+    if (filePath.length() > 0) {
+      File file = new File(filePath);
+      Uri fileUri = FileProvider.getUriForFile(activity,
+          activity.getApplicationContext().getPackageName() + ".provider", file);
+      try {
+        ShareVideo shareVideo = new ShareVideo.Builder().setLocalUrl(fileUri).build();
+        ShareVideoContent content = new ShareVideoContent.Builder()
+            .setVideo(shareVideo)
+            .setContentTitle(url)
+            .setContentDescription(msg)
+            .build();
+        shareDialog.show(content);
+      } catch (Exception e) {
+        result.success("Error: " + e.toString());
+      }
 
+    } else {
+      ShareLinkContent content = new ShareLinkContent.Builder()
+          .setContentUrl(Uri.parse(url))
+          .setQuote(msg)
+          .build();
+      shareDialog.show(content);
+    }
   }
 
   /**
