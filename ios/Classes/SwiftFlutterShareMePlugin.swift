@@ -183,6 +183,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
     func sharefacebook(message:Dictionary<String,Any>, result: @escaping FlutterResult)  {
         let viewController = UIApplication.shared.delegate?.window??.rootViewController
         let filePath = message["filePath"] as! String
+        let type = message["fileType"] as! String
 
         if filePath.isEmpty 
         {
@@ -196,11 +197,37 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
           result("Success")
         }
         else {
+          var image: UIImage?
+          var video: URL?
+
           var assetId:String?
-          let video = URL(fileURLWithPath: filePath)
+
+          if(type == "image") {
+            image = UIImage(named: filePath)
+          } else if(type == "video") {
+            video = URL(fileURLWithPath: filePath)
+          }
+
+          if(image==nil && video==nil){
+            self.result!("File format not supported Please check the file.")
+            return
+          }
+
+          if(image != nil) {
+            let photo = SharePhoto(image: image!, userGenerated: true)
+            let shareContent = SharePhotoContent()
+            shareContent.photos = [photo]
+            
+            let shareDialog = ShareDialog(viewController: viewController, content: shareContent, delegate: self)
+            shareDialog.mode = .automatic
+            shareDialog.show()
+            result("Success")
+            return
+          }
+
           do{
             try PHPhotoLibrary.shared().performChanges({
-                let request = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: video)
+                let request = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: video!)
                 if(request==nil){
                   self.result!("An error occured while saving the file.")
                   return;
@@ -220,10 +247,10 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
                       return
                   }
 
-                  let video = ShareVideo()
-                  video.videoURL = URL(string: "assets-library://asset/asset.mp4?id=" + assetId.components(separatedBy:"/")[0] + "&ext=mp4")
+                  let shareVideo = ShareVideo()
+                  shareVideo.videoURL = URL(string: "assets-library://asset/asset.mp4?id=" + assetId.components(separatedBy:"/")[0] + "&ext=mp4")
                   let shareContent = ShareVideoContent()
-                  shareContent.video = video
+                  shareContent.video = shareVideo
                   
                   let shareDialog = ShareDialog(viewController: viewController, content: shareContent, delegate: self)
                   shareDialog.mode = .automatic

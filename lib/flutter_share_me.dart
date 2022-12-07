@@ -107,11 +107,17 @@ class FlutterShareMe {
     required String msg,
     String url = '',
     String filePath = '',
+    FileType fileType = FileType.image,
   }) async {
     final Map<String, dynamic> arguments = <String, dynamic>{};
     arguments.putIfAbsent('msg', () => msg);
     arguments.putIfAbsent('url', () => url);
     arguments.putIfAbsent('filePath', () => filePath);
+    if (fileType == FileType.image) {
+      arguments.putIfAbsent('fileType', () => 'image');
+    } else {
+      arguments.putIfAbsent('fileType', () => 'video');
+    }
     String? result;
     try {
       result = await _channel.invokeMethod<String?>(_methodFaceBook, arguments);
