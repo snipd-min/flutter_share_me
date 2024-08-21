@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 enum Share {
   facebook,
   messenger,
-  twitter,
   whatsapp,
   whatsapp_personal,
   whatsapp_business,
@@ -122,13 +121,6 @@ class _MyAppState extends State<MyApp> {
         break;
       case Share.messenger:
         response = await flutterShareMe.shareToMessenger(url: url, msg: msg);
-        break;
-      case Share.twitter:
-        response = await flutterShareMe.shareToTwitter(
-          url: url,
-          msg: msg,
-          filePath: file?.path ?? '',
-        );
         break;
       case Share.whatsapp:
         if (file != null) {

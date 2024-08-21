@@ -136,9 +136,6 @@ import 'package:flutter_share_me/flutter_share_me.dart';
 ### facebook
 #### shareToFacebook({String msg, String url})   
 
-### twitter
-#### shareToTwitter({String msg, String url})   
-
 ### whatsapp
 #### shareToWhatsApp({String msg,String imagePath})  
 #### shareToWhatsApp4Biz({String msg,String imagePath})  (only android)
